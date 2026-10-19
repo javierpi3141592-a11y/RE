@@ -2,7 +2,7 @@
 export interface RecordedTransportUrl {
   readonly origin: string | null;
   readonly path: string | null;
-  /** WHATWG query spelling, present only when explicitly selected for projection. */
+  /** WHATWG query spelling, retaining an explicit empty delimiter; selected only on request. */
   readonly query?: string;
   readonly credentials:
     | { readonly start: number; readonly end: number }
@@ -70,8 +70,13 @@ export const parseRecordedTransportUrl = (
     (special && value[authorityEnd] === "\\")
   )
     return { origin, path: null, credentials };
+  const hash = value.indexOf("#", authorityEnd);
+  const question = value.indexOf("?", authorityEnd);
+  const hasQuery = question >= 0 && (hash < 0 || question < hash);
   const query =
-    options.includeQuery === true ? { query: absolute!.search } : {};
+    options.includeQuery === true
+      ? { query: absolute!.search || (hasQuery ? "?" : "") }
+      : {};
   if (value[authorityEnd] !== "/")
     return { origin, path: "/", credentials, ...query };
   let pathEnd = authorityEnd;
